@@ -5,132 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Focus Mode Active - ShameScroll</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@900&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #0f172a, #1e1b4b);
-            color: #F9FAFB;
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-        }
-
-        .focus-container {
-            max-width: 600px;
-            padding: 3rem 2rem;
-            background: rgba(31, 41, 55, 0.8);
-            border-radius: 20px;
-            border: 2px solid #4F46E5;
-            box-shadow: 0 25px 50px -12px rgba(79, 70, 229, 0.25);
-            backdrop-filter: blur(10px);
-        }
-
-        .title-font {
-            font-family: 'Playfair Display', serif;
-            font-size: 3rem;
-            font-weight: 900;
-            color: #4F46E5;
-            margin-bottom: 1rem;
-            text-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
-        }
-
-        .mission-text {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #A7F3D0;
-            margin-bottom: 2rem;
-            padding: 1rem 2rem;
-            background: rgba(16, 185, 129, 0.1);
-            border-radius: 12px;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .timer-display {
-            font-size: 4rem;
-            font-weight: 700;
-            font-family: 'Courier New', monospace;
-            color: #4F46E5;
-            margin: 2rem 0;
-            text-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
-        }
-
-        .motivational-quote {
-            font-size: 1.2rem;
-            color: #D1D5DB;
-            font-style: italic;
-            margin: 2rem 0;
-            line-height: 1.6;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: rgba(75, 85, 99, 0.5);
-            border-radius: 4px;
-            margin: 2rem 0;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #4F46E5, #7C3AED);
-            border-radius: 4px;
-            transition: width 1s ease-in-out;
-            width: 0%;
-        }
-
-        .blocked-message {
-            color: #9CA3AF;
-            font-size: 1rem;
-            margin-top: 2rem;
-            padding: 1rem;
-            background: rgba(239, 68, 68, 0.1);
-            border-radius: 8px;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-
-        .breathing-animation {
-            animation: breathe 4s ease-in-out infinite;
-        }
-
-        @keyframes breathe {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .stat-card {
-            background: rgba(0, 0, 0, 0.2);
-            padding: 1rem;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #4F46E5;
-        }
-
-        .stat-label {
-            font-size: 0.875rem;
-            color: #9CA3AF;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
-<body>
+<body class="shamescroll-body focus-body">
     <div class="focus-container breathing-animation">
         <h1 class="title-font">🎯 Focus Mode Active</h1>
         
@@ -208,61 +85,87 @@
         }
 
         function loadFocusState() {
-            chrome.runtime.sendMessage({ type: 'GET_FOCUS_STATE' }, (response) => {
-                if (response && response.focusState && response.focusState.isActive) {
-                    focusState = response.focusState;
-                    document.getElementById('mission-display').textContent = `Mission: ${focusState.mission}`;
-                    
-                    // Start timer updates
-                    updateTimer();
-                    timerInterval = setInterval(updateTimer, 1000);
-                    
-                    // Show random motivational quote
-                    const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
-                    document.getElementById('motivational-quote').textContent = randomQuote;
-                } else {
-                    // No active focus session, redirect or show message
-                    document.getElementById('mission-display').textContent = "No active focus session";
-                    document.getElementById('timer-display').textContent = "00:00";
-                }
-            });
+            if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
+                chrome.runtime.sendMessage({ type: 'GET_FOCUS_STATE' }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        console.error("Error getting focus state:", chrome.runtime.lastError.message);
+                        return;
+                    }
+
+                    if (response && response.focusState && response.focusState.isActive) {
+                        focusState = response.focusState;
+                        document.getElementById('mission-display').textContent = `Mission: ${focusState.mission}`;
+                        
+                        // Start timer updates
+                        updateTimer();
+                        timerInterval = setInterval(updateTimer, 1000);
+                        
+                        // Show random motivational quote
+                        const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
+                        document.getElementById('motivational-quote').textContent = randomQuote;
+                    } else {
+                        // No active focus session, redirect or show message
+                        document.getElementById('mission-display').textContent = "No active focus session";
+                        document.getElementById('timer-display').textContent = "00:00";
+                    }
+                });
+            } else {
+                console.error("Chrome runtime API is not available. This page must run as part of the extension.");
+                document.getElementById('mission-display').textContent = "Error: Extension context not available.";
+            }
         }
 
         function loadStats() {
-            // Get today's focus sessions
-            chrome.storage.local.get(['dailyRecords'], (data) => {
-                const today = new Date().toISOString().split('T')[0];
-                const todayRecord = data.dailyRecords && data.dailyRecords[today];
-                const sessionsToday = todayRecord ? todayRecord.focusSessions : 0;
-                document.getElementById('sessions-today').textContent = sessionsToday;
-            });
-            
-            // Get streak data
-            chrome.runtime.sendMessage({ type: 'GET_STREAK_DATA' }, (response) => {
-                if (response && response.streakData) {
-                    document.getElementById('current-streak').textContent = response.streakData.current;
-                }
-            });
+            if (typeof chrome !== "undefined" && chrome.storage && chrome.storage.local) {
+                // Get today's focus sessions
+                chrome.storage.local.get(['dailyRecords'], (data) => {
+                    if (chrome.runtime.lastError) {
+                        console.error("Error getting daily records:", chrome.runtime.lastError.message);
+                        return;
+                    }
+                    const today = new Date().toISOString().split('T')[0];
+                    const todayRecord = data.dailyRecords && data.dailyRecords[today];
+                    const sessionsToday = todayRecord ? todayRecord.focusSessions : 0;
+                    document.getElementById('sessions-today').textContent = sessionsToday;
+                });
+            }
+
+            if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
+                // Get streak data
+                chrome.runtime.sendMessage({ type: 'GET_STREAK_DATA' }, (response) => {
+                     if (chrome.runtime.lastError) {
+                        console.error("Error getting streak data:", chrome.runtime.lastError.message);
+                        return;
+                    }
+                    if (response && response.streakData) {
+                        document.getElementById('current-streak').textContent = response.streakData.current;
+                    }
+                });
+            }
         }
 
-        // Listen for focus state updates
-        chrome.runtime.onMessage.addListener((message) => {
-            if (message.type === 'FOCUS_STATE_UPDATE') {
-                focusState = message.focusState;
-                if (!focusState.isActive) {
-                    clearInterval(timerInterval);
-                    // Focus session ended, could redirect to a success page
-                    window.location.reload();
-                }
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadFocusState();
+            loadStats();
+            
+            // Update stats periodically
+            setInterval(loadStats, 30000);
+
+            // Listen for focus state updates
+            if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.onMessage) {
+                chrome.runtime.onMessage.addListener((message) => {
+                    if (message.type === 'FOCUS_STATE_UPDATE') {
+                        focusState = message.focusState;
+                        if (!focusState.isActive) {
+                            clearInterval(timerInterval);
+                            // Focus session ended, could redirect to a success page
+                            window.location.reload();
+                        }
+                    }
+                });
             }
         });
-
-        // Initialize
-        loadFocusState();
-        loadStats();
-        
-        // Update stats periodically
-        setInterval(loadStats, 30000);
     </script>
 </body>
 </html>
