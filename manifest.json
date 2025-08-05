@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "ShameScroll",
-  "version": "1.5.0",
-  "description": "Track your doomscrolling, block sites, and build focus.",
+  "name": "ShameScroll - Digital Wellness Tracker",
+  "version": "2.0.0",
+  "description": "Track your doomscrolling, build focus streaks, and reclaim your digital wellness with mindful productivity tools.",
   "permissions": [
     "tabs",
     "storage",
@@ -17,13 +17,39 @@
     "*://*.twitter.com/",
     "*://*.facebook.com/",
     "*://*.instagram.com/",
-    "*://*.tiktok.com/"
+    "*://*.tiktok.com/",
+    "*://*.linkedin.com/",
+    "*://*.pinterest.com/",
+    "*://*.snapchat.com/",
+    "*://*.twitch.tv/",
+    "*://*.discord.com/"
   ],
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.youtube.com/*",
+        "*://*.reddit.com/*",
+        "*://*.x.com/*",
+        "*://*.twitter.com/*",
+        "*://*.facebook.com/*",
+        "*://*.instagram.com/*",
+        "*://*.tiktok.com/*",
+        "*://*.linkedin.com/*",
+        "*://*.pinterest.com/*",
+        "*://*.snapchat.com/*",
+        "*://*.twitch.tv/*",
+        "*://*.discord.com/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_title": "ShameScroll - Digital Wellness Tracker"
   },
   "icons": {
     "16": "assets/icon16.png",
@@ -34,12 +60,29 @@
     {
       "resources": [
         "assets/shame-alerts.json",
-        "assets/chart.min.js"
+        "assets/chart.min.js",
+        "focus-block.html"
       ],
       "matches": ["<all_urls>"]
     }
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+  },
+  "commands": {
+    "start-focus": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+F",
+        "mac": "Command+Shift+F"
+      },
+      "description": "Start a focus session"
+    },
+    "toggle-timer": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+T",
+        "mac": "Command+Shift+T"
+      },
+      "description": "Toggle timer visibility"
+    }
   }
 }
