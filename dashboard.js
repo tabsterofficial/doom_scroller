@@ -1,207 +1,226 @@
-// background.js
+// dashboard.js
 
-// --- Configuration ---
-const DOOMSCROLL_SITES = [
-  'youtube.com', 'reddit.com', 'x.com', 'twitter.com',
-  'facebook.com', 'instagram.com', 'tiktok.com',
-];
-const FOCUS_DURATION = 25 * 60 * 1000; // 25 minutes in milliseconds
-const BLOCK_RULE_ID = 1;
+document.addEventListener('DOMContentLoaded', () => {
+    // --- DOM Elements ---
+    const totalTimeTodayEl = document.getElementById('total-time-today');
+    const productivityScoreEl = document.getElementById('productivity-score');
+    const worstOffenderEl = document.getElementById('worst-offender');
+    const scrollChartCanvas = document.getElementById('scroll-chart').getContext('2d');
+    const sitesListEl = document.getElementById('sites-list-detailed');
+    const calendarHeatmapEl = document.getElementById('calendar-heatmap');
 
-let activeHost = null;
-let timeInterval = null;
-let focusState = { isActive: false, endTime: 0 };
+    let scrollChart = null;
 
-// --- Utility Functions ---
-function getTodayDateString() {
-    const today = new Date();
-    return `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}-${today.getDate().toString().padStart(2, '0')}`;
-}
+    // --- Utility Functions ---
 
-async function dailyDataUpdate(updateFn) {
-    try {
-        const todayDate = getTodayDateString();
-        let { dailyRecords = {} } = await chrome.storage.local.get('dailyRecords');
-        if (!dailyRecords[todayDate]) {
-            dailyRecords[todayDate] = { scrollTime: 0, focusSessions: 0 };
+    /**
+     * Formats total seconds into a human-readable string (e.g., 1h 25m 3s).
+     * @param {number} totalSeconds - The total seconds to format.
+     * @returns {string} The formatted time string.
+     */
+    function formatTime(totalSeconds) {
+        if (typeof totalSeconds !== 'number' || totalSeconds < 0) return '0s';
+        if (totalSeconds < 60) return `${totalSeconds}s`;
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        let parts = [];
+        if (hours > 0) parts.push(`${hours}h`);
+        if (minutes > 0) parts.push(`${minutes}m`);
+        if (seconds > 0 || parts.length === 0) parts.push(`${seconds}s`);
+        return parts.join(' ');
+    }
+
+    /**
+     * Calculates a productivity score.
+     * @param {number} scrollTime - Time spent scrolling in seconds.
+     * @param {number} focusSessions - Number of completed focus sessions.
+     * @returns {string} The calculated score.
+     */
+    function calculateProductivityScore(scrollTime, focusSessions) {
+        const scrollHours = scrollTime / 3600;
+        const focusHours = focusSessions * (25 / 60);
+        if (scrollHours === 0 && focusHours === 0) return 'N/A';
+        const ratio = focusHours / (scrollHours + focusHours);
+        const score = Math.round(ratio * 100);
+        if (isNaN(score)) return 'N/A';
+        return `${score}%`;
+    }
+
+    // --- UI Update Functions ---
+
+    /**
+     * Updates the top statistics cards.
+     * @param {object} todayData - Today's site data.
+     * @param {object} dailyRecord - Today's daily record.
+     */
+    function updateStatsCards(todayData, dailyRecord) {
+        const sites = todayData.sites || {};
+        const totalTime = Object.values(sites).reduce((sum, time) => sum + time, 0);
+        totalTimeTodayEl.textContent = formatTime(totalTime);
+
+        // Find the worst offender
+        const worst = Object.entries(sites).sort(([, a], [, b]) => b - a)[0];
+        worstOffenderEl.textContent = worst ? worst[0] : 'None';
+
+        // Update productivity score
+        const focusSessions = dailyRecord ? dailyRecord.focusSessions : 0;
+        productivityScoreEl.textContent = calculateProductivityScore(totalTime, focusSessions);
+    }
+
+    /**
+     * Renders the doughnut chart for today's scroll time breakdown.
+     * @param {object} todayData - Today's site data.
+     */
+    function renderTodayChart(todayData) {
+        const sites = todayData.sites || {};
+        const labels = Object.keys(sites);
+        const data = Object.values(sites);
+
+        const chartColors = [
+            '#F87171', '#60A5FA', '#FBBF24', '#34D399',
+            '#A78BFA', '#F472B6', '#FDE68A'
+        ];
+
+        if (scrollChart) {
+            scrollChart.destroy();
         }
-        updateFn(dailyRecords[todayDate]);
-        await chrome.storage.local.set({ dailyRecords });
-    } catch (error) {
-        console.error("Error updating daily data:", error);
-    }
-}
 
-async function dailyRolloverCheck() {
-    const data = await chrome.storage.local.get(['today', 'yesterday']);
-    const todayDate = getTodayDateString();
-    if (!data.today || data.today.date !== todayDate) {
-        const newYesterday = data.today || { date: 'none', sites: {} };
-        const newToday = { date: todayDate, sites: {} };
-        await chrome.storage.local.set({ today: newToday, yesterday: newYesterday });
-    }
-}
+        if (labels.length === 0) {
+            // You can add a message in the canvas if there's no data
+            const ctx = scrollChartCanvas;
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#6B7280';
+            ctx.font = "16px 'Inter', sans-serif";
+            ctx.fillText('No scroll data for today.', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            ctx.restore();
+            return;
+        }
 
-// --- Focus Mode Logic ---
-async function updateBlockingRules() {
-    await chrome.declarativeNetRequest.removeDynamicRules({ removeRuleIds: [BLOCK_RULE_ID] });
-    if (focusState.isActive) {
-        await chrome.declarativeNetRequest.addDynamicRules({
-            addRules: [{
-                id: BLOCK_RULE_ID,
-                priority: 1,
-                action: { type: 'block' },
-                condition: {
-                    urlFilter: `||*${DOOMSCROLL_SITES.join('*^||*')}*`,
-                    resourceTypes: ['main_frame']
+        scrollChart = new Chart(scrollChartCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Time Wasted',
+                    data: data,
+                    backgroundColor: chartColors,
+                    borderColor: '#1F2937',
+                    borderWidth: 3,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        display: false,
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${formatTime(context.raw)}`;
+                            }
+                        }
+                    }
                 }
-            }]
+            }
         });
     }
-}
 
-async function startFocusSession() {
-    if (focusState.isActive) return;
-    focusState = { isActive: true, endTime: Date.now() + FOCUS_DURATION };
-    await chrome.storage.local.set({ focusState });
-    await updateBlockingRules();
-    chrome.alarms.create('focusTimer', { delayInMinutes: 25 });
-    broadcastFocusState();
-}
+    /**
+     * Renders the detailed list of time spent per site.
+     * @param {object} todayData - Today's site data.
+     */
+    function renderDetailedSiteList(todayData) {
+        const sites = todayData.sites || {};
+        const sortedSites = Object.entries(sites).sort(([, a], [, b]) => b - a);
 
-async function stopFocusSession(completed = false) {
-    if (!focusState.isActive) return;
-    focusState = { isActive: false, endTime: 0 };
-    await chrome.storage.local.set({ focusState });
-    await updateBlockingRules();
-    chrome.alarms.clear('focusTimer');
-    if (completed) {
-        await dailyDataUpdate(record => record.focusSessions += 1);
-        chrome.notifications.create({ type: 'basic', iconUrl: 'assets/icon128.png', title: 'Focus Session Complete!', message: 'Great job! Time for a short break.' });
-    }
-    broadcastFocusState();
-}
+        sitesListEl.innerHTML = ''; // Clear the list
 
-function broadcastFocusState() {
-    chrome.runtime.sendMessage({ type: 'FOCUS_STATE_UPDATE', focusState });
-}
-
-function sendTimeToContentScript(host, time, isTracking) {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0] && tabs[0].id) {
-            chrome.tabs.sendMessage(tabs[0].id, { type: 'SHAME_UPDATE', host, time, isTracking }, () => {
-                if (chrome.runtime.lastError) { /* Suppress error */ }
+        if (sortedSites.length === 0) {
+            const emptyItem = document.createElement('li');
+            emptyItem.className = 'site-item-empty';
+            emptyItem.textContent = 'No data yet. Go waste some time!';
+            sitesListEl.appendChild(emptyItem);
+        } else {
+            sortedSites.forEach(([host, time]) => {
+                const listItem = document.createElement('li');
+                listItem.className = 'site-item';
+                listItem.innerHTML = `
+                    <span class="host">${host}</span>
+                    <span class="time">${formatTime(time)}</span>
+                `;
+                sitesListEl.appendChild(listItem);
             });
         }
-    });
-}
+    }
 
-// --- Time Tracking Logic (Corrected) ---
-async function startTracking(host) {
-    if (activeHost === host) return;
-    stopTracking(); // Ensure any old timers are cleared
+    /**
+     * Generates the calendar heatmap for the last 90 days.
+     * @param {object} dailyRecords - All daily records.
+     */
+    function generateCalendarHeatmap(dailyRecords) {
+        calendarHeatmapEl.innerHTML = ''; // Clear previous calendar
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(endDate.getDate() - 89); // 90 days total
 
-    activeHost = host;
-    await chrome.storage.local.set({ activeHost: host });
-    await dailyRolloverCheck(); // Check for new day once at the start
+        for (let i = 0; i < 90; i++) {
+            const date = new Date(startDate);
+            date.setDate(startDate.getDate() + i);
+            const dateString = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
 
-    timeInterval = setInterval(async () => {
+            const record = dailyRecords[dateString];
+            const scrollTime = record ? record.scrollTime : 0;
+            const focusSessions = record ? record.focusSessions : 0;
+
+            // Determine color based on scroll time
+            let level = 'l0'; // Default blue (good)
+            if (scrollTime > 3600 * 2) level = 'l4'; // Red (very high)
+            else if (scrollTime > 3600) level = 'l3'; // Orange
+            else if (scrollTime > 1800) level = 'l2'; // Yellow
+            else if (scrollTime > 0) level = 'l1'; // Green (low)
+
+            const box = document.createElement('div');
+            box.className = `cal-box ${level}`;
+            box.title = `${dateString}\nScroll: ${formatTime(scrollTime)}\nFocus Sessions: ${focusSessions}`;
+
+            if (focusSessions > 0) {
+                const marker = document.createElement('div');
+                marker.className = 'focus-marker';
+                marker.title = `${focusSessions} focus session(s) completed.`;
+                box.appendChild(marker);
+            }
+
+            calendarHeatmapEl.appendChild(box);
+        }
+    }
+
+    // --- Main Function ---
+    async function updateDashboard() {
         try {
-            // More robust way to get and update data
-            const { today } = await chrome.storage.local.get('today');
-            
-            const currentSites = today && today.sites ? today.sites : {};
-            const newTime = (currentSites[host] || 0) + 1;
-            
-            const newTodayObject = {
-                date: today ? today.date : getTodayDateString(),
-                sites: {
-                    ...currentSites,
-                    [host]: newTime
-                }
-            };
+            const data = await chrome.storage.local.get(['today', 'dailyRecords']);
+            const todayData = data.today || { sites: {} };
+            const dailyRecords = data.dailyRecords || {};
+            const todayDate = `${new Date().getFullYear()}-${(new Date().getMonth() + 1).toString().padStart(2, '0')}-${new Date().getDate().toString().padStart(2, '0')}`;
+            const todayRecord = dailyRecords[todayDate] || { scrollTime: 0, focusSessions: 0 };
 
-            await chrome.storage.local.set({ today: newTodayObject });
-            await dailyDataUpdate(record => { record.scrollTime += 1; });
-            
-            // Send the update to the content script
-            sendTimeToContentScript(host, newTime, true);
+            updateStatsCards(todayData, todayRecord);
+            renderTodayChart(todayData);
+            renderDetailedSiteList(todayData);
+            generateCalendarHeatmap(dailyRecords);
         } catch (error) {
-            console.error("Error in tracking interval:", error);
-            stopTracking(); // Stop on error to prevent issues
+            console.error("Failed to update dashboard:", error);
+            // Display an error message to the user
+            document.body.innerHTML = '<div class="error-message">Could not load dashboard data. Please try again later.</div>';
         }
-    }, 1000);
-}
+    }
 
-function stopTracking() {
-    if (timeInterval) {
-        clearInterval(timeInterval);
-        timeInterval = null;
-    }
-    if (activeHost) {
-        sendTimeToContentScript(activeHost, 0, false);
-        activeHost = null;
-        chrome.storage.local.set({ activeHost: null });
-    }
-}
-
-// --- Event Listeners ---
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'START_FOCUS') startFocusSession();
-    else if (message.type === 'STOP_FOCUS') stopFocusSession(false);
-    else if (message.type === 'GET_FOCUS_STATE') sendResponse({ focusState });
-    else if (message.type === 'GET_CURRENT_STATUS') {
-        if (activeHost) {
-            chrome.storage.local.get('today', ({ today }) => {
-                const time = today && today.sites ? today.sites[activeHost] || 0 : 0;
-                sendResponse({ isTracking: true, host: activeHost, time: time });
-            });
-        } else {
-            sendResponse({ isTracking: false });
-        }
-        return true; // Required for async response
-    }
+    // Initial load
+    updateDashboard();
 });
-
-chrome.alarms.onAlarm.addListener(alarm => {
-    if (alarm.name === 'focusTimer') stopFocusSession(true);
-});
-
-function handleTabChange(tab) {
-    if (focusState.isActive || !tab || !tab.url) {
-        stopTracking();
-        return;
-    }
-    try {
-        const url = new URL(tab.url);
-        const isDoomScroll = DOOMSCROLL_SITES.some(site => url.hostname.includes(site));
-        if (isDoomScroll) {
-            startTracking(url.hostname);
-        } else {
-            stopTracking();
-        }
-    } catch (e) {
-        stopTracking();
-    }
-}
-
-chrome.tabs.onActivated.addListener(activeInfo => chrome.tabs.get(activeInfo.tabId, handleTabChange));
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (tab.active && changeInfo.url) handleTabChange(tab);
-});
-chrome.windows.onFocusChanged.addListener(() => {
-    chrome.tabs.query({ active: true, currentWindow: true }, tabs => {
-        if (tabs.length > 0) handleTabChange(tabs[0]);
-    });
-});
-
-// --- Initialization ---
-async function initialize() {
-    await dailyRolloverCheck();
-    const data = await chrome.storage.local.get('focusState');
-    if (data.focusState) focusState = data.focusState;
-    updateBlockingRules();
-}
-
-chrome.runtime.onStartup.addListener(initialize);
-chrome.runtime.onInstalled.addListener(initialize);
