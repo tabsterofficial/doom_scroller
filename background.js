@@ -127,8 +127,7 @@ async function startTracking(host) {
             
             sendTimeToContentScript(host, newTime, true);
 
-        } catch (error)
-{
+        } catch (error) { // The extra brace was removed here
             console.error("Error in tracking interval:", error);
             stopTracking();
         }
