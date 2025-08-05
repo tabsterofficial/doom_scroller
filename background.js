@@ -32,7 +32,7 @@ async function dailyRolloverCheck() {
     }
 }
 
-// --- Focus Mode Logic (Corrected) ---
+// --- Focus Mode Logic ---
 async function updateBlockingRules() {
     const addRules = [];
     if (focusState.isActive) {
@@ -41,17 +41,15 @@ async function updateBlockingRules() {
             priority: 1,
             action: { type: 'block' },
             condition: {
-                // This regex is more robust for matching domains
                 regexFilter: DOOMSCROLL_SITES.map(host => `^https?://([a-z0-9-]+\\.)*${host.replace('.', '\\.')}/.*`).join('|'),
                 resourceTypes: ['main_frame']
             }
         });
     }
 
-    // The correct function is updateDynamicRules, which handles both adding and removing.
     await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: [BLOCK_RULE_ID], // Always attempt to remove the old rule
-        addRules: addRules              // Add new rules if focus is active
+        removeRuleIds: [BLOCK_RULE_ID],
+        addRules: addRules
     });
 
     if (addRules.length > 0) {
@@ -60,7 +58,6 @@ async function updateBlockingRules() {
         console.log("Site blocking rules disabled.");
     }
 }
-
 
 async function startFocusSession(mission) {
     if (focusState.isActive) return;
@@ -180,6 +177,7 @@ chrome.alarms.onAlarm.addListener(alarm => {
     if (alarm.name === 'focusTimer') stopFocusSession(true);
 });
 
+// CORRECTED: This function now correctly groups domains with their subdomains.
 function handleTabChange(tab) {
     if (focusState.isActive || !tab || !tab.url) {
         stopTracking();
@@ -187,14 +185,22 @@ function handleTabChange(tab) {
     }
     try {
         const url = new URL(tab.url);
-        const isDoomScroll = DOOMSCROLL_SITES.some(site => url.hostname === site || url.hostname.endsWith('.' + site));
-        if (isDoomScroll) {
-            const primaryHost = DOOMSCROLL_SITES.find(site => url.hostname === site || url.hostname.endsWith('.' + site));
-            startTracking(primaryHost);
+        const hostname = url.hostname; // e.g., 'www.youtube.com' or 'm.tiktok.com'
+
+        // Find the base domain from our list that matches the current tab's hostname.
+        // This ensures that 'www.youtube.com' and 'youtube.com' both map to 'youtube.com'.
+        const matchedSite = DOOMSCROLL_SITES.find(site =>
+            hostname === site || hostname.endsWith('.' + site)
+        );
+
+        if (matchedSite) {
+            // Always use the matched base domain from our list for tracking.
+            startTracking(matchedSite);
         } else {
             stopTracking();
         }
     } catch (e) {
+        // Catches errors for invalid URLs like 'chrome://newtab'
         stopTracking();
     }
 }
