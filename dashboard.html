@@ -12,18 +12,17 @@
 
     <main class="dashboard-container">
         <header class="dashboard-header">
-            <h1 class="title-font">Analytics Dashboard</h1>
-            <p>A monument to your wasted time.</p>
+            <h1 class="title-font">Digital Wellness Dashboard</h1>
+            <p>Your journey to mindful productivity, one day at a time.</p>
         </header>
 
         <!-- Top Stats Grid -->
         <section class="stats-grid">
             <div class="stat-card">
-                <h2 class="stat-title">Total Time Today</h2>
+                <h2 class="stat-title">Total Scroll Time Today</h2>
                 <p id="total-time-today" class="stat-value text-red">--</p>
             </div>
-            <!-- NEW: Productivity Score Card -->
-            <div class="stat-card productivity-score-card">
+            <div class="stat-card">
                 <h2 class="stat-title">Productivity Score</h2>
                 <p id="productivity-score" class="stat-value text-blue">--</p>
             </div>
@@ -31,34 +30,43 @@
                 <h2 class="stat-title">Top Time Sink</h2>
                 <p id="worst-offender" class="stat-value text-yellow">--</p>
             </div>
+             <div class="stat-card" id="streak-card">
+                <h2 class="stat-title">Focus Streak</h2>
+                <p id="current-streak" class="stat-value text-green">--</p>
+            </div>
         </section>
 
-        <!-- Main Content Grid (Calendar and Charts) -->
+        <!-- Main Content Grid -->
         <div class="main-grid">
-            <!-- Productivity Calendar -->
-            <section class="stat-card calendar-card">
-                <h2 class="stat-title">Productivity Calendar (Last 90 Days)</h2>
-                <div id="calendar-heatmap" class="calendar-heatmap">
-                    <!-- Calendar will be generated here -->
-                </div>
-                <!-- The color bar legend has been removed -->
-            </section>
+            <!-- Left Column -->
+            <div class="column-left">
+                <section class="stat-card calendar-card">
+                    <h2 class="stat-title">Activity Calendar (Last 90 Days)</h2>
+                    <div id="calendar-heatmap" class="calendar-heatmap"></div>
+                </section>
+                <section class="stat-card site-list-card">
+                    <h2 class="stat-title">Time Per Site Today</h2>
+                    <ul id="sites-list-detailed" class="sites-list-detailed">
+                        <li class="site-item-empty">No data yet. Go waste some time!</li>
+                    </ul>
+                </section>
+            </div>
 
-            <!-- Today's Breakdown Chart -->
-            <section class="stat-card chart-container">
-                <h2 class="stat-title">Today's Breakdown</h2>
-                <div class="chart-container-style">
-                    <canvas id="scroll-chart"></canvas>
-                </div>
-            </section>
-
-            <!-- Detailed Site List -->
-            <section class="stat-card site-list-card">
-                <h2 class="stat-title">Time Per Site</h2>
-                <ul id="sites-list-detailed" class="sites-list-detailed">
-                    <li class="site-item-empty">No data yet. Go waste some time!</li>
-                </ul>
-            </section>
+            <!-- Right Column -->
+            <div class="column-right">
+                <section class="stat-card chart-container">
+                    <h2 class="stat-title">Today's Breakdown</h2>
+                    <div class="chart-wrapper">
+                        <canvas id="scroll-chart"></canvas>
+                    </div>
+                </section>
+                <section class="stat-card chart-container">
+                    <h2 class="stat-title">Weekly Comparison</h2>
+                    <div class="chart-wrapper">
+                        <canvas id="weekly-chart"></canvas>
+                    </div>
+                </section>
+            </div>
         </div>
     </main>
 

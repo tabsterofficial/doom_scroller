@@ -7,7 +7,7 @@ const DOOMSCROLL_SITES = [
   'pinterest.com', 'snapchat.com', 'twitch.tv', 'discord.com'
 ];
 const FOCUS_DURATION = 25 * 60 * 1000; // 25 minutes in milliseconds
-const BLOCK_RULE_ID = 1;
+const BLOCK_RULE_ID_START = 1; // Use a starting ID for rules
 const WARNING_THRESHOLD = 30 * 60; // 30 minutes warning
 const DANGER_THRESHOLD = 60 * 60; // 1 hour danger zone
 
@@ -32,12 +32,9 @@ async function dailyRolloverCheck() {
             const newYesterday = data.today || { date: 'none', sites: {} };
             const newToday = { date: todayDate, sites: {} };
             await chrome.storage.local.set({ today: newToday, yesterday: newYesterday });
-            
-            // Reset daily warning flags
             warningShown = false;
         }
         
-        // Initialize streak data if not exists
         if (!data.streakData) {
             streakData = { current: 0, longest: 0, lastFocusDate: null };
             await chrome.storage.local.set({ streakData });
@@ -51,28 +48,32 @@ async function dailyRolloverCheck() {
 
 // --- Enhanced Focus Mode Logic ---
 async function updateBlockingRules() {
+    const currentRules = await chrome.declarativeNetRequest.getDynamicRules();
+    const removeRuleIds = currentRules.map(rule => rule.id);
     const addRules = [];
+
     if (focusState.isActive) {
-        addRules.push({
-            id: BLOCK_RULE_ID,
-            priority: 1,
-            action: { 
-                type: 'redirect',
-                redirect: { 
-                    extensionPath: '/focus-block.html'
+        DOOMSCROLL_SITES.forEach((host, index) => {
+            addRules.push({
+                id: BLOCK_RULE_ID_START + index,
+                priority: 1,
+                action: { 
+                    type: 'redirect',
+                    redirect: { 
+                        extensionPath: '/focus.html' // Redirect to a dedicated focus page
+                    }
+                },
+                condition: {
+                    // More efficient domain matching
+                    urlFilter: `||${host}/`,
+                    resourceTypes: ['main_frame']
                 }
-            },
-            condition: {
-                regexFilter: DOOMSCROLL_SITES.map(host => 
-                    `^https?://([a-z0-9-]+\\.)*${host.replace('.', '\\.')}/.*`
-                ).join('|'),
-                resourceTypes: ['main_frame']
-            }
+            });
         });
     }
 
     await chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: [BLOCK_RULE_ID],
+        removeRuleIds: removeRuleIds,
         addRules: addRules
     });
 
@@ -94,7 +95,6 @@ async function startFocusSession(mission) {
     chrome.alarms.create('focusTimer', { delayInMinutes: 25 });
     broadcastFocusState();
     
-    // Show encouraging notification
     chrome.notifications.create({
         type: 'basic',
         iconUrl: 'assets/icon128.png',
@@ -165,7 +165,6 @@ async function updateStreak(completed) {
     
     if (completed) {
         if (streakData.lastFocusDate === todayDate) {
-            // Already focused today, don't increment
             return;
         }
         
@@ -187,12 +186,9 @@ async function updateStreak(completed) {
 }
 
 function broadcastFocusState() {
-    chrome.runtime.sendMessage({ type: 'FOCUS_STATE_UPDATE', focusState }).catch(() => {
-        // Ignore errors if no listeners
-    });
+    chrome.runtime.sendMessage({ type: 'FOCUS_STATE_UPDATE', focusState }).catch(() => {});
 }
 
-// --- Enhanced Time Tracking with Warnings ---
 function sendTimeToContentScript(host, time, isTracking) {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         if (tabs[0] && tabs[0].id) {
@@ -218,8 +214,6 @@ function getWarningLevel(timeInSeconds) {
 async function checkTimeWarnings(host, time) {
     if (time >= WARNING_THRESHOLD && !warningShown) {
         warningShown = true;
-        
-        // Load a random shame alert
         try {
             const response = await fetch(chrome.runtime.getURL('assets/shame-alerts.json'));
             const data = await response.json();
@@ -275,7 +269,6 @@ async function startTracking(host) {
             await chrome.storage.local.set({ today, dailyRecords });
             sendTimeToContentScript(host, newTime, true);
             
-            // Check for warnings
             await checkTimeWarnings(host, newTime);
 
         } catch (error) {
@@ -295,11 +288,9 @@ function stopTracking() {
         activeHost = null;
         chrome.storage.local.set({ activeHost: null });
     }
-    // Reset warnings when stopping tracking
     warningShown = false;
 }
 
-// --- Enhanced Event Listeners ---
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     switch (message.type) {
         case 'START_FOCUS':
@@ -317,7 +308,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         case 'GET_CURRENT_STATUS':
             if (activeHost) {
                 chrome.storage.local.get('today', ({ today }) => {
-                    const time = today && today.sites ? today.sites[activeHost] || 0 : 0;
+                    const time = today?.sites?.[activeHost] || 0;
                     sendResponse({ 
                         isTracking: true, 
                         host: activeHost, 
@@ -341,7 +332,6 @@ chrome.alarms.onAlarm.addListener(alarm => {
     }
 });
 
-// Enhanced tab change handler with better domain matching
 function handleTabChange(tab) {
     if (focusState.isActive || !tab || !tab.url) {
         stopTracking();
@@ -366,7 +356,6 @@ function handleTabChange(tab) {
     }
 }
 
-// Event listeners for tab changes
 chrome.tabs.onActivated.addListener(activeInfo => 
     chrome.tabs.get(activeInfo.tabId, handleTabChange)
 );
@@ -381,14 +370,12 @@ chrome.windows.onFocusChanged.addListener(() => {
     });
 });
 
-// --- Initialization ---
 async function initialize() {
     await dailyRolloverCheck();
     const data = await chrome.storage.local.get(['focusState', 'streakData']);
     
     if (data.focusState) {
         focusState = data.focusState;
-        // Check if focus session expired while extension was off
         if (focusState.isActive && Date.now() > focusState.endTime) {
             await stopFocusSession(true);
         }
@@ -405,8 +392,6 @@ chrome.runtime.onStartup.addListener(initialize);
 chrome.runtime.onInstalled.addListener(async (details) => {
     if (details.reason === 'install' || details.reason === 'update') {
         await initialize();
-        
-        // Show welcome notification on install
         if (details.reason === 'install') {
             chrome.notifications.create({
                 type: 'basic',
