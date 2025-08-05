@@ -32,23 +32,35 @@ async function dailyRolloverCheck() {
     }
 }
 
-// --- Focus Mode Logic ---
+// --- Focus Mode Logic (Corrected) ---
 async function updateBlockingRules() {
-    await chrome.declarativeNetRequest.removeDynamicRules({ removeRuleIds: [BLOCK_RULE_ID] });
+    const addRules = [];
     if (focusState.isActive) {
-        await chrome.declarativeNetRequest.addDynamicRules({
-            addRules: [{
-                id: BLOCK_RULE_ID,
-                priority: 1,
-                action: { type: 'block' },
-                condition: {
-                    urlFilter: `||*${DOOMSCROLL_SITES.join('*^||*')}*`,
-                    resourceTypes: ['main_frame']
-                }
-            }]
+        addRules.push({
+            id: BLOCK_RULE_ID,
+            priority: 1,
+            action: { type: 'block' },
+            condition: {
+                // This regex is more robust for matching domains
+                regexFilter: DOOMSCROLL_SITES.map(host => `^https?://([a-z0-9-]+\\.)*${host.replace('.', '\\.')}/.*`).join('|'),
+                resourceTypes: ['main_frame']
+            }
         });
     }
+
+    // The correct function is updateDynamicRules, which handles both adding and removing.
+    await chrome.declarativeNetRequest.updateDynamicRules({
+        removeRuleIds: [BLOCK_RULE_ID], // Always attempt to remove the old rule
+        addRules: addRules              // Add new rules if focus is active
+    });
+
+    if (addRules.length > 0) {
+        console.log("Site blocking rules enabled.");
+    } else {
+        console.log("Site blocking rules disabled.");
+    }
 }
+
 
 async function startFocusSession(mission) {
     if (focusState.isActive) return;
@@ -97,7 +109,7 @@ function sendTimeToContentScript(host, time, isTracking) {
     });
 }
 
-// --- Time Tracking Logic (Rewritten for stability) ---
+// --- Time Tracking Logic ---
 async function startTracking(host) {
     if (activeHost === host) return;
     stopTracking();
@@ -107,7 +119,7 @@ async function startTracking(host) {
 
     timeInterval = setInterval(async () => {
         try {
-            await dailyRolloverCheck(); // Ensure data is for the correct day
+            await dailyRolloverCheck();
             const todayDate = getTodayDateString();
             let { today, dailyRecords = {} } = await chrome.storage.local.get(['today', 'dailyRecords']);
 
@@ -127,7 +139,7 @@ async function startTracking(host) {
             
             sendTimeToContentScript(host, newTime, true);
 
-        } catch (error) { // The extra brace was removed here
+        } catch (error) {
             console.error("Error in tracking interval:", error);
             stopTracking();
         }
@@ -175,9 +187,10 @@ function handleTabChange(tab) {
     }
     try {
         const url = new URL(tab.url);
-        const isDoomScroll = DOOMSCROLL_SITES.some(site => url.hostname.includes(site));
+        const isDoomScroll = DOOMSCROLL_SITES.some(site => url.hostname === site || url.hostname.endsWith('.' + site));
         if (isDoomScroll) {
-            startTracking(url.hostname);
+            const primaryHost = DOOMSCROLL_SITES.find(site => url.hostname === site || url.hostname.endsWith('.' + site));
+            startTracking(primaryHost);
         } else {
             stopTracking();
         }
