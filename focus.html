@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Mode</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="shamescroll-body focus-body">
+
+    <main class="focus-container">
+        <header class="focus-header">
+            <h1 class="title-font">Mindful Mission</h1>
+            <p>Define your goal. Block distractions. Accomplish your mission.</p>
+        </header>
+
+        <!-- NEW: Mission Input Area -->
+        <section id="mission-input-area" class="mission-input-card">
+            <label for="mission-input">What is your mission?</label>
+            <input type="text" id="mission-input" placeholder="e.g., Finish chapter 4 of my report">
+        </section>
+
+        <section class="timer-card">
+            <div id="timer-display" class="timer-display">25:00</div>
+            <!-- This will show the active mission -->
+            <div id="active-mission-display" class="active-mission"></div>
+        </section>
+
+        <section class="controls-card">
+            <button id="start-focus-btn" class="button-base button-primary">Begin Mission</button>
+            <button id="stop-focus-btn" class="button-base button-danger" style="display: none;">Abort Mission</button>
+        </section>
+    </main>
+
+    <script src="focus.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShameScroll</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="shamescroll-body popup-body">
+
+    <main class="shamescroll-container">
+        <!-- Header -->
+        <header class="shamescroll-header">
+            <h1 class="title-font">ShameScroll</h1>
+            <div id="status-indicator" class="status-indicator-offline" title="Status"></div>
+        </header>
+
+        <!-- Current Status Card -->
+        <section class="card current-status-card">
+            <p class="card-subtitle">You are currently wasting time on:</p>
+            <p id="current-site" class="card-title-prominent">Nothing. Yet.</p>
+        </section>
+        
+        <!-- Today's Stats Card -->
+        <section class="card">
+            <h2 class="card-title">Your Scroll Toll Today</h2>
+            <ul id="sites-list" class="sites-list">
+                <li class="site-item-empty">No doomscrolling detected... for now.</li>
+            </ul>
+        </section>
+
+        <!-- Actions -->
+        <footer class="shamescroll-footer">
+            <button id="dashboard-btn" class="button-base button-secondary">View Analytics</button>
+            <button id="focus-mode-btn" class="button-base button-primary">Enter Focus Mode</button>
+        </footer>
+    </main>
+
+    <script src="popup.js"></script>
+</body>
+</html>

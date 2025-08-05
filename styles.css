@@ -1,0 +1,159 @@
+/* styles.css */
+/* --- Base & Fonts --- */
+body.shamescroll-body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #1d1a2f, #111827);
+    color: #F9FAFB;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.title-font {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.75rem;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 0.5px;
+}
+
+/* --- Page-Specific Layouts --- */
+.popup-body {
+    width: 350px;
+    padding: 1rem;
+}
+
+.dashboard-body, .focus-body {
+    width: 100%;
+    min-height: 100vh;
+}
+
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* --- Popup Layout --- */
+.shamescroll-container { display: flex; flex-direction: column; gap: 1rem; }
+.shamescroll-header { display: flex; align-items: center; justify-content: space-between; padding: 0 0.25rem; }
+
+/* --- Status Indicator --- */
+.status-indicator-offline { width: 0.75rem; height: 0.75rem; border-radius: 9999px; background-color: #6B7280; transition: background-color 0.3s ease; }
+.status-indicator-online { background-color: #34D399; }
+
+/* --- Glassmorphism Cards --- */
+.card { background: rgba(31, 41, 55, 0.5); border-radius: 12px; padding: 1rem; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.card-title { font-size: 0.875rem; font-weight: 700; text-transform: uppercase; color: #9CA3AF; margin-bottom: 0.75rem; }
+.card-subtitle { text-align: center; font-size: 0.875rem; color: #9CA3AF; }
+.card-title-prominent { text-align: center; font-size: 1.25rem; font-weight: 700; color: #F87171; margin-top: 0.25rem; }
+
+/* --- Popup Site List --- */
+.sites-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+.site-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; }
+.site-item .host { font-weight: 600; color: #D1D5DB; }
+.site-item .time { font-family: 'Courier New', Courier, monospace; font-weight: bold; background-color: rgba(0, 0, 0, 0.2); color: #F87171; padding: 0.25rem 0.5rem; border-radius: 6px; }
+.site-item-empty { color: #6B7280; text-align: center; padding: 1rem 0; font-size: 0.9rem; }
+
+/* --- Footer & Buttons --- */
+.shamescroll-footer { margin-top: 0.5rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.1); display: flex; flex-direction: column; gap: 0.5rem; }
+.button-base { width: 100%; font-weight: 700; padding: 0.75rem 1rem; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s ease-in-out; font-size: 0.9rem; }
+.button-base:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.button-primary { background-color: #4F46E5; color: white; }
+.button-primary:hover { background-color: #6366F1; }
+.button-secondary { background-color: rgba(75, 85, 99, 0.8); color: white; }
+.button-secondary:hover { background-color: #6B7280; }
+.button-danger { background-color: #EF4444; color: white; }
+.button-danger:hover { background-color: #F87171; }
+
+/* --- Dashboard Layout --- */
+.dashboard-header { text-align: center; margin-bottom: 2rem; }
+.stats-grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 1.5rem; }
+.main-grid { display: grid; gap: 1.5rem; grid-template-columns: 1fr; }
+.stat-card { background: #1F2937; border-radius: 12px; padding: 1.5rem; border: 1px solid #374151; }
+.stat-title { font-size: 0.875rem; font-weight: 600; color: #9CA3AF; margin-bottom: 0.5rem; text-transform: uppercase; }
+.stat-value { font-size: 2rem; font-weight: 700; }
+.text-red { color: #F87171; }
+.text-green { color: #34D399; }
+.text-yellow { color: #FBBF24; }
+.text-blue { color: #60A5FA; }
+.text-gray { color: #9CA3AF; }
+
+/* --- Calendar Heatmap --- */
+.calendar-heatmap { display: grid; grid-template-columns: repeat(13, 1fr); grid-auto-rows: 1fr; gap: 4px; }
+.cal-box { width: 100%; padding-bottom: 100%; border-radius: 4px; background-color: #374151; position: relative; }
+.cal-box.l0 { background-color: #3b82f6; }
+.cal-box.l1 { background-color: #22c55e; }
+.cal-box.l2 { background-color: #facc15; }
+.cal-box.l3 { background-color: #f97316; }
+.cal-box.l4 { background-color: #ef4444; }
+.focus-marker { position: absolute; bottom: 2px; right: 2px; width: 6px; height: 6px; background: #ffffff; border-radius: 50%; border: 1px solid #1F2937; }
+
+/* --- Focus Mode Page --- */
+.focus-body { display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center; }
+.focus-body.focus-active { background: linear-gradient(135deg, #0f172a, #1e1b4b); }
+.focus-container { max-width: 400px; width: 100%; }
+.focus-header p { color: #9CA3AF; font-size: 1.1rem; margin-top: 0.5rem; }
+.timer-card { background: rgba(0,0,0,0.2); border-radius: 50%; width: 300px; height: 300px; margin: 2rem auto; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 4px solid #4F46E5; box-shadow: 0 0 20px rgba(79, 70, 229, 0.5); }
+.timer-display { font-size: 5rem; font-weight: 700; font-family: 'Courier New', Courier, monospace; }
+.controls-card { background: none; border: none; box-shadow: none; backdrop-filter: none; }
+
+/* NEW: Styles for Mission Input */
+.mission-input-card {
+    background: none;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    padding: 0;
+    margin-bottom: -1rem; /* Pull timer card up */
+}
+.mission-input-card label {
+    font-weight: 600;
+    color: #9CA3AF;
+}
+#mission-input {
+    width: 100%;
+    background-color: rgba(0,0,0,0.2);
+    border: 1px solid #4B5563;
+    color: white;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    box-sizing: border-box;
+    text-align: center;
+    font-size: 1rem;
+}
+#mission-input::placeholder {
+    color: #6B7280;
+}
+
+.active-mission {
+    color: #9CA3AF;
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    padding: 0 1rem;
+    display: none; /* Hidden by default */
+}
+
+
+/* --- On-Page Timer Overlay --- */
+#shamescroll-timer-overlay { position: fixed; bottom: 20px; right: 20px; background-color: rgba(17, 24, 39, 0.9); color: #F9FAFB; border-radius: 12px; z-index: 999999; border: 1px solid #374151; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); display: flex; align-items: center; transition: all 0.3s ease-in-out; overflow: hidden; }
+.timer-content { display: flex; align-items: center; gap: 10px; padding: 10px 20px; transition: all 0.3s ease-in-out; }
+.timer-content .label { color: #9CA3AF; font-size: 12px; text-transform: uppercase; }
+.timer-content .time { color: #F87171; font-weight: 700; font-size: 20px; font-family: 'Courier New', Courier, monospace; }
+.clock-content { padding: 10px 15px; border-left: 1px solid #374151; display: flex; align-items: center; transition: all 0.3s ease-in-out; }
+.clock { font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 600; color: #9CA3AF; }
+.toggle-btn { background: #4B5563; border: none; color: white; cursor: pointer; font-size: 20px; line-height: 1; padding: 5px 8px; align-self: stretch; transition: all 0.3s ease-in-out; }
+.toggle-btn:hover { background: #6B7280; }
+#shamescroll-timer-overlay.hidden-state { padding: 0; }
+#shamescroll-timer-overlay.hidden-state .timer-content,
+#shamescroll-timer-overlay.hidden-state .clock-content { max-width: 0; padding: 10px 0; opacity: 0; border-left: none; }
+#shamescroll-timer-overlay.hidden-state .toggle-btn { transform: rotate(45deg); }
+
+/* --- Media Queries for Responsive Layout --- */
+@media (min-width: 1024px) {
+    .main-grid { grid-template-columns: 2fr 1fr; grid-template-rows: auto auto; }
+    .calendar-card { grid-column: 1 / 2; grid-row: 1 / 3; }
+    .chart-container { grid-column: 2 / 3; grid-row: 1 / 2; }
+    .site-list-card { grid-column: 2 / 3; grid-row: 2 / 3; }
+}

@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "ShameScroll",
+  "version": "1.5.0",
+  "description": "Track your doomscrolling, block sites, and build focus.",
+  "permissions": [
+    "tabs",
+    "storage",
+    "notifications",
+    "alarms",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "*://*.youtube.com/",
+    "*://*.reddit.com/",
+    "*://*.x.com/",
+    "*://*.twitter.com/",
+    "*://*.facebook.com/",
+    "*://*.instagram.com/",
+    "*://*.tiktok.com/"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    "16": "assets/icon16.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/shame-alerts.json",
+        "assets/chart.min.js"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+  }
+}
