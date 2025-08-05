@@ -49,8 +49,9 @@ body.shamescroll-body {
 /* --- Popup Layout --- */
 .popup-body {
     width: 380px;
-    height: auto;
+    height: 580px;
     background: var(--gray-900);
+    overflow: hidden;
 }
 
 .shamescroll-container {
