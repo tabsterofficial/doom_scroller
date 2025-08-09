@@ -94,24 +94,29 @@ function createTimerOverlay() {
     timerDiv = document.createElement('div');
     timerDiv.id = 'shamescroll-timer-overlay';
     
+    // Updated HTML structure for a more compact, modern look
     timerDiv.innerHTML = `
-        <div class="timer-content">
-            <div class="timer-main">
-                <span class="label">Time Wasted</span>
-                <span class="time">00:00:00</span>
+        <div class="content-wrapper">
+            <div class="timer-content">
+                <div class="timer-main">
+                    <span class="label">Time Wasted</span>
+                    <span class="time">00:00:00</span>
+                </div>
+                <div class="motivational-message" id="motivational-message">
+                    Time flies when you're scrolling...
+                </div>
             </div>
-            <div class="motivational-message" id="motivational-message">
-                Time flies when you're scrolling...
+            <div class="clock-content">
+                <span id="shamescroll-realtime-clock" class="clock"></span>
             </div>
         </div>
-        <div class="clock-content">
-            <span id="shamescroll-realtime-clock" class="clock"></span>
+        <div class="actions-wrapper">
+            <button id="shamescroll-dismiss-btn" class="dismiss-btn" title="Dismiss Warning" style="display: none;">✓</button>
+            <button id="shamescroll-toggle-btn" class="toggle-btn" title="Hide/Show Timer">×</button>
         </div>
-        <button id="shamescroll-toggle-btn" class="toggle-btn" title="Hide/Show Timer">×</button>
-        <button id="shamescroll-dismiss-btn" class="dismiss-btn" title="Dismiss Warning" style="display: none;">✓</button>
     `;
 
-    // Add enhanced styles
+    // Add enhanced styles with animations and new shape
     const style = document.createElement('style');
     style.textContent = `
         #shamescroll-timer-overlay { 
@@ -128,10 +133,10 @@ function createTimerOverlay() {
             -webkit-backdrop-filter: blur(10px) !important; 
             display: flex !important; 
             align-items: stretch !important; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important; 
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important; 
             overflow: hidden !important;
-            max-width: 400px !important;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            width: 250px; /* More square-like */
         }
         
         #shamescroll-timer-overlay.warning-state {
@@ -143,20 +148,26 @@ function createTimerOverlay() {
             border-color: #EF4444 !important;
             box-shadow: 0 20px 25px -5px rgba(239, 68, 68, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2) !important;
         }
+
+        .content-wrapper {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            padding: 12px 16px !important;
+        }
         
         .timer-content { 
             display: flex !important; 
             flex-direction: column !important;
-            padding: 12px 16px !important; 
             transition: all 0.3s ease-in-out !important; 
-            flex: 1 !important;
         }
         
         .timer-main {
             display: flex !important;
-            align-items: center !important;
-            gap: 10px !important;
-            margin-bottom: 4px !important;
+            flex-direction: column;
+            align-items: flex-start !important;
+            margin-bottom: 8px !important;
         }
         
         .timer-content .label { 
@@ -165,19 +176,17 @@ function createTimerOverlay() {
             text-transform: uppercase !important; 
             font-weight: 600 !important;
             letter-spacing: 0.5px !important;
+            margin-bottom: 4px;
         }
         
         .timer-content .time { 
             color: #F87171 !important; 
             font-weight: 700 !important; 
-            font-size: 18px !important; 
+            font-size: 24px !important; 
             font-family: 'Courier New', Monaco, monospace !important;
         }
         
-        .warning-state .timer-content .time {
-            color: #F59E0B !important;
-        }
-        
+        .warning-state .timer-content .time { color: #F59E0B !important; }
         .danger-state .timer-content .time {
             color: #EF4444 !important;
             animation: pulse-danger 2s infinite !important;
@@ -192,74 +201,76 @@ function createTimerOverlay() {
             font-size: 10px !important;
             color: #6B7280 !important;
             font-style: italic !important;
-            max-width: 200px !important;
             line-height: 1.3 !important;
+            border-top: 1px solid #374151;
+            padding-top: 8px;
+            margin-top: 8px;
         }
         
-        .warning-state .motivational-message {
-            color: #D97706 !important;
-        }
-        
+        .warning-state .motivational-message { color: #D97706 !important; }
         .danger-state .motivational-message {
             color: #DC2626 !important;
             font-weight: 600 !important;
         }
         
         .clock-content { 
-            padding: 12px 14px !important; 
-            border-left: 1px solid #374151 !important; 
-            display: flex !important; 
-            align-items: center !important; 
-            transition: all 0.3s ease-in-out !important; 
+            display: none !important; /* Hidden for a cleaner look, can be re-enabled */
         }
         
-        .clock { 
-            font-family: -apple-system, system-ui, sans-serif !important; 
-            font-size: 16px !important; 
-            font-weight: 600 !important; 
-            color: #9CA3AF !important; 
+        .actions-wrapper {
+            display: flex;
+            flex-direction: column;
         }
-        
+
         .toggle-btn, .dismiss-btn { 
-            background: #4B5563 !important; 
+            background: transparent !important; 
             border: none !important; 
-            color: white !important; 
+            color: #9CA3AF !important; 
             cursor: pointer !important; 
-            font-size: 16px !important; 
+            font-size: 20px !important; 
             line-height: 1 !important; 
-            padding: 8px 10px !important; 
-            align-self: stretch !important; 
-            transition: all 0.2s ease-in-out !important; 
+            padding: 8px 12px !important; 
+            transition: all 0.3s ease-in-out !important;
             border-left: 1px solid #374151 !important;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         .toggle-btn:hover, .dismiss-btn:hover { 
-            background: #6B7280 !important; 
+            background: #374151 !important; 
+            color: white !important;
         }
         
         .dismiss-btn {
-            background: #059669 !important;
+            color: #059669 !important;
         }
         
         .dismiss-btn:hover {
-            background: #047857 !important;
+            background: #065F46 !important;
         }
         
+        /* Hidden State for Animation */
         #shamescroll-timer-overlay.hidden-state { 
-            padding: 0 !important; 
+            width: 44px !important; /* Width of the button */
+            height: 44px !important; /* Height of the button */
+            padding: 0 !important;
         }
         
-        #shamescroll-timer-overlay.hidden-state .timer-content,
-        #shamescroll-timer-overlay.hidden-state .clock-content { 
+        #shamescroll-timer-overlay.hidden-state .content-wrapper { 
             max-width: 0 !important; 
             padding: 12px 0 !important; 
             opacity: 0 !important; 
-            border-left: none !important; 
+            visibility: hidden;
         }
         
         #shamescroll-timer-overlay.hidden-state .toggle-btn { 
             transform: rotate(45deg) !important; 
             border-left: none !important;
+            width: 100%;
+            height: 100%;
+            font-size: 24px;
         }
     `;
     
@@ -306,18 +317,20 @@ function updateWarningState(warningLevel) {
     // Remove existing warning classes
     timerDiv.classList.remove('warning-state', 'danger-state');
     
+    const dismissBtn = document.getElementById('shamescroll-dismiss-btn');
+
     // Add appropriate warning class
     if (warningLevel === 'warning') {
         timerDiv.classList.add('warning-state');
         startPulseAnimation();
-        document.getElementById('shamescroll-dismiss-btn').style.display = 'block';
+        if(dismissBtn) dismissBtn.style.display = 'flex';
     } else if (warningLevel === 'danger') {
         timerDiv.classList.add('danger-state');
         startPulseAnimation();
-        document.getElementById('shamescroll-dismiss-btn').style.display = 'block';
+        if(dismissBtn) dismissBtn.style.display = 'flex';
     } else {
         stopPulseAnimation();
-        document.getElementById('shamescroll-dismiss-btn').style.display = 'none';
+        if(dismissBtn) dismissBtn.style.display = 'none';
     }
 }
 
@@ -369,6 +382,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // Enhanced initial check when the script loads
 chrome.runtime.sendMessage({ type: 'GET_CURRENT_STATUS' }, (response) => {
+    if (chrome.runtime.lastError) {
+        // Handle error, e.g., if the background script is not ready
+        console.log("Could not connect to background script. It might be inactive.");
+        return;
+    }
     if (response && response.isTracking) {
         if (!timerDiv) {
             createTimerOverlay();
