@@ -16,6 +16,7 @@
     --gray-300: #D1D5DB;
     --gray-400: #9CA3AF;
     --gray-500: #6B7280;
+    --gray-700: #374151;
     --gray-800: #1F2937;
     --gray-900: #111827;
     
@@ -67,18 +68,18 @@ body.shamescroll-body {
     align-items: center;
 }
 
-.status-indicator-offline {
-    width: 40px;
-    height: 40px;
+.status-indicator-offline, .status-indicator-online {
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
+    transition: all var(--transition-normal);
+}
+
+.status-indicator-offline {
     background-color: var(--gray-500);
-    box-shadow: 0 0 8px var(--gray-500);
 }
 
 .status-indicator-online {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
     background-color: var(--success-400);
     box-shadow: 0 0 8px var(--success-400);
 }
